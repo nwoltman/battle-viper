@@ -1,14 +1,14 @@
 'use strict';
 
 const medley = require('@medley/medley');
+const logger = require('./logger');
 
 const app = medley();
 
 app.route(require('./move'));
 
 app.post('/start', function start(req, res) {
-  console.log('Starting Game');
-
+  logger.info('Starting Game');
   res.send({
     color: '#0958EB',
     headType: 'evil',

@@ -1,0 +1,7 @@
+{
+  "root": true,
+  "extends": "@nwoltman/eslint-config",
+  "rules": {
+    "no-console": 0
+  }
+}

@@ -1,66 +1,45 @@
-const bodyParser = require('body-parser')
-const express = require('express')
-const logger = require('morgan')
-const app = express()
-const {
-  fallbackHandler,
-  notFoundHandler,
-  genericErrorHandler,
-  poweredByHandler
-} = require('./handlers.js')
+'use strict';
+
+const medley = require('@medley/medley');
+
+const app = medley();
+
+app.route(require('./move'));
+
+app.post('/start', function start(req, res) {
+  console.log('Starting Game');
+
+  res.send({
+    color: '#0958EB',
+    headType: 'evil',
+    tailType: 'bolt',
+  });
+});
+
+app.post('/end', function end(req, res) {
+  res.send('OK');
+});
+
+app.post('/ping', function ping(req, res) {
+  res.send('OK');
+});
+
+app.get('/', (req, res) => {
+  res.headers['content-type'] = 'text/html;charset=utf-8';
+  res.send(`
+    Battlesnake documentation can be found at:
+     <a href="https://docs.battlesnake.io">https://docs.battlesnake.io</a>.
+  `);
+});
+
+app.get('/favicon.ico', (req, res) => {
+  res.headers['content-type'] = 'image/x-icon';
+  res.send();
+});
 
 // For deployment to Heroku, the port needs to be set using ENV, so
 // we check for the port number in process.env
-app.set('port', (process.env.PORT || 9001))
-
-app.enable('verbose errors')
-
-app.use(logger('dev'))
-app.use(bodyParser.json())
-app.use(poweredByHandler)
-
-// --- SNAKE LOGIC GOES BELOW THIS LINE ---
-
-// Handle POST request to '/start'
-app.post('/start', (request, response) => {
-  // NOTE: Do something here to start the game
-
-  // Response data
-  const data = {
-    color: '#DFFF00',
-  }
-
-  return response.json(data)
-})
-
-// Handle POST request to '/move'
-app.post('/move', (request, response) => {
-  // NOTE: Do something here to generate your move
-
-  // Response data
-  const data = {
-    move: 'up', // one of: ['up','down','left','right']
-  }
-
-  return response.json(data)
-})
-
-app.post('/end', (request, response) => {
-  // NOTE: Any cleanup when a game is complete.
-  return response.json({})
-})
-
-app.post('/ping', (request, response) => {
-  // Used for checking if this snake is still alive.
-  return response.json({});
-})
-
-// --- SNAKE LOGIC GOES ABOVE THIS LINE ---
-
-app.use('*', fallbackHandler)
-app.use(notFoundHandler)
-app.use(genericErrorHandler)
-
-app.listen(app.get('port'), () => {
-  console.log('Server listening on port %s', app.get('port'))
-})
+const port = process.env.PORT || 9001;
+app.listen(port, '::', () => {
+  console.log('Server listening on port %s', port);
+});

@@ -1,12 +1,15 @@
 'use strict';
 
-// Only eat food if there's a potential path from the food back to snake's own tail
+// Only eat food if there's a potential path from the food back to where snake's own tail will be
 function shouldEatFood(foodPoint, mySnake, board) {
   const {body} = mySnake;
   const stepsToFood = countStepsBetweenPoints(body[0], foodPoint);
+  if (stepsToFood > body.length) {
+    return true;
+  }
   const boardNodes = buildBoardNodes(board, stepsToFood);
-  const myTail = body[body.length - 1];
-  return pathExists(foodPoint, myTail, boardNodes);
+  const futureTail = body[body.length - stepsToFood];
+  return pathExists(foodPoint, futureTail, boardNodes);
 }
 
 function countStepsBetweenPoints(pointA, pointB) {

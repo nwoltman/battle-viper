@@ -57,15 +57,11 @@ function pathExists(startPoint, targetPoint, boardNodes) {
     const node = searchQueue.shift();
 
     for (const siblingNode of getSiblingNodes(node, boardNodes)) {
-      if (siblingNode.hasSnake) {
-        continue;
-      }
-
       if (siblingNode.x === targetPoint.x && siblingNode.y === targetPoint.y) {
         return true; // Found path to target
       }
 
-      if (siblingNode.discovered) {
+      if (siblingNode.discovered || siblingNode.hasSnake) {
         continue;
       }
 

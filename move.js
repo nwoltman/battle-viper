@@ -104,7 +104,7 @@ function getTargets(board, mySnake, boardNodes) {
     targets.sort(compareDistance);
   }
 
-  return targets.map(target => target.point).concat(getCorners(board, myHead));
+  return targets.map(target => target.point).concat(getCorners(board, boardNodes, myHead));
 }
 
 function distanceBetweenPoints(pointA, pointB) {
@@ -154,25 +154,44 @@ function shouldAttackSnake(theirSnake, mySnake, board, boardNodes) {
   return shouldAttack;
 }
 
-function getCorners(board, head) {
+// Get the corners, prioritizing the ones with the least snake parts near them
+// and then prioritizing the corners that are the farthest away
+function getCorners(board, boardNodes, head) {
   return [
-    {
-      x: 0,
-      y: 0,
-    },
-    {
-      x: 0,
-      y: board.height - 1,
-    },
-    {
-      x: board.width - 1,
-      y: 0,
-    },
-    {
-      x: board.width - 1,
-      y: board.height - 1,
-    },
-  ].sort((a, b) => distanceBetweenPoints(b, head) - distanceBetweenPoints(a, head));
+    makeCorner(0, 0, board, boardNodes),
+    makeCorner(0, board.height - 1, board, boardNodes),
+    makeCorner(board.width - 1, 0, board, boardNodes),
+    makeCorner(0, board.height - 1, board, boardNodes),
+  ].sort((a, b) => {
+    return (a.numSnakeParts - b.numSnakeParts) ||
+      (distanceBetweenPoints(b, head) - distanceBetweenPoints(a, head));
+  });
+}
+
+function makeCorner(x, y, board, boardNodes) {
+  let numSnakeParts = 0;
+
+  const halfWidth = Math.trunc(board.width / 2);
+  const minX = x === 0 ? 0 : halfWidth;
+  const maxX = x === 0 ? halfWidth : board.width - 1;
+
+  const halfHeight = Math.trunc(board.height / 2);
+  const minY = y === 0 ? 0 : halfHeight;
+  const maxY = y === 0 ? halfHeight : board.height - 1;
+
+  for (let i = minX; i <= maxX; i++) {
+    for (let j = minY; j <= maxY; j++) {
+      if (boardNodes[i][j].hasSnake) {
+        ++numSnakeParts;
+      }
+    }
+  }
+
+  return {
+    x,
+    y,
+    numSnakeParts,
+  };
 }
 
 function buildBoardNodes(board, myHead) {

@@ -314,7 +314,7 @@ function getPathToTarget(target, snake, board, boardNodes, avoidPotentialSnakes)
         if (avoidPotentialSnakes) {
           // Avoid this path if the first step is where another snake might be
           const {potentialSnake} = pathToTarget[0];
-          if (potentialSnake !== null && potentialSnake.body.length >= snake.body.length) {
+          if (potentialSnake !== null && potentialSnake.body.length > snake.body.length) {
             continue;
           }
         }

@@ -27,8 +27,10 @@ app.post('/ping', function ping(req, res) {
 app.get('/', (req, res) => {
   res.headers['content-type'] = 'text/html;charset=utf-8';
   res.send(`
-    Battlesnake documentation can be found at:
-     <a href="https://docs.battlesnake.io">https://docs.battlesnake.io</a>.
+    See Battle Viper's battles at:
+    <a href="https://play.battlesnake.com/s/snk_SdD9kJPb9tkhTbpMtXrvp69f/">
+      https://play.battlesnake.com/s/snk_SdD9kJPb9tkhTbpMtXrvp69f/
+    </a>
   `);
 });
 

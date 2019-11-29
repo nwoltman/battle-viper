@@ -157,7 +157,11 @@ function shouldAttackSnake(theirSnake, mySnake, board, boardNodes) {
     return false;
   }
 
-  if (board.snakes.length <= 2) { // Only 2 left? Go for the kill!
+  const theirHead = getHead(theirSnake);
+  const myHead = getHead(mySnake);
+
+  // Only 2 left and it's close by? Go for the kill!
+  if (board.snakes.length <= 2 && distanceBetweenPoints(theirHead, myHead) <= 2) {
     return true;
   }
 
@@ -165,8 +169,6 @@ function shouldAttackSnake(theirSnake, mySnake, board, boardNodes) {
   // parts within the range around their snake, don't attack it.
   const SEARCH_RANGE = 2;
   const SNAKE_PARTS_LIMIT = 9;
-
-  const theirHead = getHead(theirSnake);
 
   const minX = Math.max(theirHead.x - SEARCH_RANGE, 0);
   const maxX = Math.min(theirHead.x + SEARCH_RANGE, boardNodes.length - 1);

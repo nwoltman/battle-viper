@@ -2,12 +2,18 @@
 
 // Only eat food if there's a potential path from the food back to snake's own tail
 function shouldEatFood(foodPoint, mySnake, board) {
-  const boardNodes = buildBoardNodes(board);
-  const myTail = mySnake.body[mySnake.body.length - 1];
+  const {body} = mySnake;
+  const stepsToFood = countStepsBetweenPoints(body[0], foodPoint);
+  const boardNodes = buildBoardNodes(board, stepsToFood);
+  const myTail = body[body.length - 1];
   return pathExists(foodPoint, myTail, boardNodes);
 }
 
-function buildBoardNodes(board) {
+function countStepsBetweenPoints(pointA, pointB) {
+  return Math.abs(pointA.x - pointB.x) + Math.abs(pointA.y - pointB.y);
+}
+
+function buildBoardNodes(board, numStepsToFood) {
   const boardNodes = [];
 
   // Build board
@@ -21,7 +27,7 @@ function buildBoardNodes(board) {
 
   // Set snake locations
   for (const {body} of board.snakes) {
-    for (let i = 0; i < body.length - 1; i++) { // Ignore tails
+    for (let i = 0; i < body.length - numStepsToFood; i++) { // Ignore body parts that won't exist
       const point = body[i];
       boardNodes[point.x][point.y].hasSnake = true;
     }

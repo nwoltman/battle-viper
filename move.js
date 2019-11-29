@@ -303,11 +303,13 @@ function getPathToTarget(target, snake, board, boardNodes, avoidPotentialSnakes)
   const searchQueue = [
     boardNodes[head.x][head.y], // Head is intial search node
   ];
+  const targetIsPotentialSnake = boardNodes[target.x][target.y].potentialSnake !== null;
 
   while (searchQueue.length > 0) {
     const node = searchQueue.shift();
+    const siblings = getSiblingNodesWithoutSnake(node, board, boardNodes, targetIsPotentialSnake);
 
-    for (const siblingNode of getSiblingNodesWithoutSnake(node, board, boardNodes)) {
+    for (const siblingNode of siblings) {
       if (siblingNode.x === target.x && siblingNode.y === target.y) { // sibling is target
         const pathToTarget = node.path.concat(siblingNode);
 
@@ -335,7 +337,7 @@ function getPathToTarget(target, snake, board, boardNodes, avoidPotentialSnakes)
   return null; // No path to target (right now)
 }
 
-function getSiblingNodesWithoutSnake(node, board, boardNodes) {
+function getSiblingNodesWithoutSnake(node, board, boardNodes, targetIsPotentialSnake) {
   const siblings = [];
 
   if (node.x > 0) {
@@ -363,7 +365,9 @@ function getSiblingNodesWithoutSnake(node, board, boardNodes) {
     }
   }
 
-  return siblings.sort(prioritizeNoPotentialSnakes);
+  return targetIsPotentialSnake === true
+    ? siblings
+    : siblings.sort(prioritizeNoPotentialSnakes);
 }
 
 function prioritizeNoPotentialSnakes(a, b) {

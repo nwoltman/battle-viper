@@ -157,6 +157,7 @@ function buildBoardNodes(board, myHead) {
     }
 
     const potentialSnakeNodes = getSiblingNodesWithoutSnake(head, board, boardNodes);
+    logger.info('Potential Snakes:', potentialSnakeNodes);
     for (const node of potentialSnakeNodes) {
       node.potentialSnake = snake;
     }
@@ -202,6 +203,7 @@ function getPathToTarget(target, snake, board, boardNodes) {
       if (siblingNode.x === target.x && siblingNode.y === target.y) { // siblingNode is target
         const {potentialSnake} = siblingNode;
         if (potentialSnake === null || potentialSnake.body.length < snake.body.length) {
+          logger.info('Found Path\npotentialSnake:', potentialSnake);
           return node.path.concat(siblingNode); // Return path to target
         }
       }

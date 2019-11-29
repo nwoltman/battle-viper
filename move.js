@@ -52,6 +52,12 @@ function getMove(game) {
     return getDirectionToPoint(head, pathToTarget[0]);
   }
 
+  const fallbackPoint = getAnySafePoint(head, board, boardNodes);
+  logger.info('Fallback point:', fallbackPoint);
+  if (fallbackPoint !== null) {
+    return getDirectionToPoint(head, pathToTarget[0]);
+  }
+
   return 'up'; // Should only reach here if all is lost
 }
 
@@ -200,12 +206,16 @@ function getPathToTarget(target, snake, board, boardNodes) {
     const node = searchQueue.shift();
 
     for (const siblingNode of getSiblingNodesWithoutSnake(node, board, boardNodes)) {
-      if (siblingNode.x === target.x && siblingNode.y === target.y) { // siblingNode is target
-        const {potentialSnake} = siblingNode;
-        if (potentialSnake === null || potentialSnake.body.length < snake.body.length) {
-          logger.info('Found Path\npotentialSnake:', potentialSnake);
-          return node.path.concat(siblingNode); // Return path to target
+      if (siblingNode.x === target.x && siblingNode.y === target.y) { // sibling is target
+        const pathToTarget = node.path.concat(siblingNode);
+
+        // Avoid this path if the first step is where another snake might be
+        const {potentialSnake} = pathToTarget[0];
+        if (potentialSnake !== null && potentialSnake.body.length >= snake.body.length) {
+          continue;
         }
+
+        return pathToTarget;
       }
 
       if (siblingNode.discovered) {
@@ -284,4 +294,9 @@ function getFarthestReachablePointWithDirection(head, boardNodes, direction) {
 
     return point;
   }
+}
+
+function getAnySafePoint(head, board, boardNodes) {
+  const siblingNodes = getSiblingNodesWithoutSnake(head, board, boardNodes);
+  return siblingNodes.length > 0 ? siblingNodes[0] : null;
 }

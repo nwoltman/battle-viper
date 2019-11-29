@@ -363,7 +363,17 @@ function getSiblingNodesWithoutSnake(node, board, boardNodes) {
     }
   }
 
-  return siblings;
+  return siblings.sort(prioritizeNoPotentialSnakes);
+}
+
+function prioritizeNoPotentialSnakes(a, b) {
+  if (a.potentialSnake !== null) {
+    return 1;
+  }
+  if (b.potentialSnake !== null) {
+    return -1;
+  }
+  return 0;
 }
 
 function getFarthestReachablePoint(head, boardNodes) {

@@ -43,9 +43,9 @@ function getMove(game) {
     resetBoardNodes(boardNodes);
   }
 
-  const target = getFarthestReachablePoint(head, boardNodes);
-  logger.info('Fallback target:', target);
-  const pathToTarget = getPathToTarget(target, snake, board, boardNodes);
+  const fallbackTarget = getFarthestReachablePoint(head, boardNodes);
+  logger.info('Fallback target:', fallbackTarget);
+  const pathToTarget = getPathToTarget(fallbackTarget, snake, board, boardNodes);
 
   if (pathToTarget !== null) {
     logger.info('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
@@ -55,7 +55,7 @@ function getMove(game) {
   const fallbackPoint = getAnySafePoint(head, board, boardNodes);
   logger.info('Fallback point:', fallbackPoint);
   if (fallbackPoint !== null) {
-    return getDirectionToPoint(head, pathToTarget[0]);
+    return getDirectionToPoint(head, fallbackPoint);
   }
 
   return 'up'; // Should only reach here if all is lost
@@ -287,7 +287,7 @@ function getFarthestReachablePointWithDirection(head, boardNodes, direction) {
     }
 
     const nextY = point.y + direction.y;
-    if (nextY < boardNodes.length && nextY >= 0 && !boardNodes[point.y][nextY].hasSnake) {
+    if (nextY < boardNodes.length && nextY >= 0 && !boardNodes[point.x][nextY].hasSnake) {
       point.y = nextY;
       continue;
     }

@@ -31,24 +31,27 @@ function getMove(game) {
   logger.info('Location:', head, 'Length:', snake.body.length);
   logger.debug('Targets:', targets);
 
-  for (let i = 0; i < targets.length; i++) {
-    const pathToTarget = getPathToTarget(targets[i], snake, board, boardNodes);
+  let avoidPotentialSnakes = true;
 
-    if (pathToTarget !== null) {
-      // logger.debug('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
-      return getDirectionToPoint(head, pathToTarget[0]);
+  for (;;) {
+    for (let i = 0; i < targets.length; i++) {
+      const pathToTarget =
+        getPathToTarget(targets[i], snake, board, boardNodes, avoidPotentialSnakes);
+
+      if (pathToTarget !== null) {
+        // logger.debug('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
+        return getDirectionToPoint(head, pathToTarget[0]);
+      }
+
+      resetBoardNodes(boardNodes);
     }
 
-    resetBoardNodes(boardNodes);
-  }
+    if (avoidPotentialSnakes === false) {
+      break;
+    }
 
-  const fallbackTarget = getFarthestReachablePoint(head, boardNodes);
-  logger.debug('Fallback target:', fallbackTarget);
-  const pathToTarget = getPathToTarget(fallbackTarget, snake, board, boardNodes);
-
-  if (pathToTarget !== null) {
-    // logger.debug('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
-    return getDirectionToPoint(head, pathToTarget[0]);
+    // Don't worry about potential snakes and try again
+    avoidPotentialSnakes = false;
   }
 
   const fallbackPoint = getAnySafePoint(head, board, boardNodes);
@@ -104,7 +107,10 @@ function getTargets(board, mySnake, boardNodes) {
     targets.sort(compareDistance);
   }
 
-  return targets.map(target => target.point).concat(getCorners(board, boardNodes, myHead));
+  return targets.map(target => target.point).concat(
+    getCorners(board, boardNodes, myHead),
+    getFarthestReachablePoint(myHead, boardNodes)
+  );
 }
 
 function distanceBetweenPoints(pointA, pointB) {
@@ -261,7 +267,7 @@ function resetBoardNodes(boardNodes) {
 }
 
 // BFS search
-function getPathToTarget(target, snake, board, boardNodes) {
+function getPathToTarget(target, snake, board, boardNodes, avoidPotentialSnakes) {
   const head = getHead(snake);
   const searchQueue = [
     boardNodes[head.x][head.y], // Head is intial search node
@@ -274,10 +280,12 @@ function getPathToTarget(target, snake, board, boardNodes) {
       if (siblingNode.x === target.x && siblingNode.y === target.y) { // sibling is target
         const pathToTarget = node.path.concat(siblingNode);
 
-        // Avoid this path if the first step is where another snake might be
-        const {potentialSnake} = pathToTarget[0];
-        if (potentialSnake !== null && potentialSnake.body.length >= snake.body.length) {
-          continue;
+        if (avoidPotentialSnakes) {
+          // Avoid this path if the first step is where another snake might be
+          const {potentialSnake} = pathToTarget[0];
+          if (potentialSnake !== null && potentialSnake.body.length >= snake.body.length) {
+            continue;
+          }
         }
 
         return pathToTarget;

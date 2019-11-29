@@ -27,13 +27,13 @@ function getMove(game) {
   } = game;
   const head = getHead(snake);
   const targets = getTargets(board, snake);
-  const boardNodes = buildBoardNodes(board);
+  const boardNodes = buildBoardNodes(board, head);
 
   logger.info('Location:', head, 'Length:', snake.body.length);
   logger.info('Targets:', targets);
 
   for (let i = 0; i < targets.length; i++) {
-    const pathToTarget = getPathToTarget(targets[i], head, board, boardNodes);
+    const pathToTarget = getPathToTarget(targets[i], snake, board, boardNodes);
 
     if (pathToTarget !== null) {
       logger.info('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
@@ -45,7 +45,7 @@ function getMove(game) {
 
   const target = getFarthestReachablePoint(head, boardNodes);
   logger.info('Fallback target:', target);
-  const pathToTarget = getPathToTarget(target, head, board, boardNodes);
+  const pathToTarget = getPathToTarget(target, snake, board, boardNodes);
 
   if (pathToTarget !== null) {
     logger.info('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
@@ -127,7 +127,7 @@ function getCorners(board, head) {
   ].sort((a, b) => distanceBetweenPoints(b, head) - distanceBetweenPoints(a, head));
 }
 
-function buildBoardNodes(board) {
+function buildBoardNodes(board, myHead) {
   const boardNodes = [];
 
   // Build board
@@ -142,10 +142,23 @@ function buildBoardNodes(board) {
   }
 
   // Set snake locations
-  for (const {body} of board.snakes) {
+  for (const snake of board.snakes) {
+    const {body} = snake;
+
     for (let i = 0; i < body.length - 1; i++) { // Ignore tails
       const point = body[i];
       boardNodes[point.x][point.y].hasSnake = true;
+    }
+
+    const head = body[0];
+
+    if (head.x === myHead.x && head.y === myHead.y) {
+      continue; // Ignore own head
+    }
+
+    const potentialSnakeNodes = getSiblingNodesWithoutSnake(head, board, boardNodes);
+    for (const node of potentialSnakeNodes) {
+      node.potentialSnake = snake;
     }
   }
 
@@ -157,6 +170,7 @@ function createNode(x, y) {
     x,
     y,
     hasSnake: false,
+    potentialSnake: null,
     discovered: false,
     path: [],
   };
@@ -174,7 +188,8 @@ function resetBoardNodes(boardNodes) {
 }
 
 // BFS search
-function getPathToTarget(target, head, board, boardNodes) {
+function getPathToTarget(target, snake, board, boardNodes) {
+  const head = getHead(snake);
   const searchQueue = [
     boardNodes[head.x][head.y], // Head is intial search node
   ];
@@ -183,13 +198,15 @@ function getPathToTarget(target, head, board, boardNodes) {
     // logger.info('Search Queue:', searchQueue.map(node => ({x: node.x, y: node.y})));
     const node = searchQueue.shift();
 
-    for (const siblingNode of getSiblingNodes(node, board, boardNodes)) {
-      // If target, return path
-      if (siblingNode.x === target.x && siblingNode.y === target.y) {
-        return node.path.concat(siblingNode);
+    for (const siblingNode of getSiblingNodesWithoutSnake(node, board, boardNodes)) {
+      if (siblingNode.x === target.x && siblingNode.y === target.y) { // siblingNode is target
+        const {potentialSnake} = siblingNode;
+        if (potentialSnake === null || potentialSnake.body.length < snake.body.length) {
+          return node.path.concat(siblingNode); // Return path to target
+        }
       }
 
-      if (siblingNode.discovered || siblingNode.hasSnake) {
+      if (siblingNode.discovered) {
         continue;
       }
 
@@ -202,20 +219,32 @@ function getPathToTarget(target, head, board, boardNodes) {
   return null; // No path to target (right now)
 }
 
-function getSiblingNodes(node, board, boardNodes) {
+function getSiblingNodesWithoutSnake(node, board, boardNodes) {
   const siblings = [];
 
   if (node.x > 0) {
-    siblings.push(boardNodes[node.x - 1][node.y]);
+    const siblingNode = boardNodes[node.x - 1][node.y];
+    if (!siblingNode.hasSnake) {
+      siblings.push(siblingNode);
+    }
   }
   if (node.x < board.width - 1) {
-    siblings.push(boardNodes[node.x + 1][node.y]);
+    const siblingNode = boardNodes[node.x + 1][node.y];
+    if (!siblingNode.hasSnake) {
+      siblings.push(siblingNode);
+    }
   }
   if (node.y > 0) {
-    siblings.push(boardNodes[node.x][node.y - 1]);
+    const siblingNode = boardNodes[node.x][node.y - 1];
+    if (!siblingNode.hasSnake) {
+      siblings.push(siblingNode);
+    }
   }
   if (node.y < board.height - 1) {
-    siblings.push(boardNodes[node.x][node.y + 1]);
+    const siblingNode = boardNodes[node.x][node.y + 1];
+    if (!siblingNode.hasSnake) {
+      siblings.push(siblingNode);
+    }
   }
 
   return siblings;

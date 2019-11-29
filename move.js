@@ -139,15 +139,15 @@ function shouldAttackSnake(theirSnake, mySnake, boardNodes) {
   const theirHead = getHead(theirSnake);
 
   const minX = Math.max(theirHead.x - SEARCH_RANGE, 0);
-  const maxX = Math.max(theirHead.x + SEARCH_RANGE, boardNodes.length - 1);
+  const maxX = Math.min(theirHead.x + SEARCH_RANGE, boardNodes.length - 1);
 
   const minY = Math.max(theirHead.y - SEARCH_RANGE, 0);
-  const maxY = Math.max(theirHead.y + SEARCH_RANGE, boardNodes.length - 1);
+  const maxY = Math.min(theirHead.y + SEARCH_RANGE, boardNodes.length - 1);
 
   let numSnakeParts = -1; // Start with -1 to discount their head (since it'll get counted below)
 
-  for (let x = minX; x < maxX; x++) {
-    for (let y = minY; y < maxY; y++) {
+  for (let x = minX; x <= maxX; x++) {
+    for (let y = minY; y <= maxY; y++) {
       if (boardNodes[x][y].hasSnake) {
         ++numSnakeParts;
       }

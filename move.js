@@ -9,9 +9,7 @@ module.exports = {
   preHandler: bodyParser.json(),
   handler: function handleMove(req, res) {
     const move = getMove(req.body);
-    // logger.info('Move Request:\nBoard:', req.body.board, '\nSnake:', req.body.you);
     logger.info('Move:', move);
-
     res.send({move});
   },
 };
@@ -30,13 +28,13 @@ function getMove(game) {
   const boardNodes = buildBoardNodes(board, head);
 
   logger.info('Location:', head, 'Length:', snake.body.length);
-  logger.info('Targets:', targets);
+  logger.debug('Targets:', targets);
 
   for (let i = 0; i < targets.length; i++) {
     const pathToTarget = getPathToTarget(targets[i], snake, board, boardNodes);
 
     if (pathToTarget !== null) {
-      logger.info('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
+      // logger.debug('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
       return getDirectionToPoint(head, pathToTarget[0]);
     }
 
@@ -44,16 +42,16 @@ function getMove(game) {
   }
 
   const fallbackTarget = getFarthestReachablePoint(head, boardNodes);
-  logger.info('Fallback target:', fallbackTarget);
+  logger.debug('Fallback target:', fallbackTarget);
   const pathToTarget = getPathToTarget(fallbackTarget, snake, board, boardNodes);
 
   if (pathToTarget !== null) {
-    logger.info('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
+    // logger.debug('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
     return getDirectionToPoint(head, pathToTarget[0]);
   }
 
   const fallbackPoint = getAnySafePoint(head, board, boardNodes);
-  logger.info('Fallback point:', fallbackPoint);
+  logger.debug('Fallback point:', fallbackPoint);
   if (fallbackPoint !== null) {
     return getDirectionToPoint(head, fallbackPoint);
   }
@@ -163,7 +161,6 @@ function buildBoardNodes(board, myHead) {
     }
 
     const potentialSnakeNodes = getSiblingNodesWithoutSnake(head, board, boardNodes);
-    logger.info('Potential Snakes:', potentialSnakeNodes);
     for (const node of potentialSnakeNodes) {
       node.potentialSnake = snake;
     }
@@ -202,7 +199,6 @@ function getPathToTarget(target, snake, board, boardNodes) {
   ];
 
   while (searchQueue.length > 0) {
-    // logger.info('Search Queue:', searchQueue.map(node => ({x: node.x, y: node.y})));
     const node = searchQueue.shift();
 
     for (const siblingNode of getSiblingNodesWithoutSnake(node, board, boardNodes)) {
@@ -269,7 +265,7 @@ function getFarthestReachablePoint(head, boardNodes) {
     getFarthestReachablePointWithDirection(head, boardNodes, {x: -1, y: 1}),
     getFarthestReachablePointWithDirection(head, boardNodes, {x: -1, y: -1}),
   ].sort((a, b) => distanceBetweenPoints(b, head) - distanceBetweenPoints(a, head));
-  logger.info('Reachable Points:', farthestPoints);
+  logger.debug('Reachable Points:', farthestPoints);
   return farthestPoints[0];
 }
 

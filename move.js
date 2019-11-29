@@ -208,6 +208,11 @@ function buildBoardNodes(board, myHead) {
     boardNodes[x] = nodes;
   }
 
+  // Set food locations
+  for (const foodPoint of board.food) {
+    boardNodes[foodPoint.x][foodPoint.y].hasFood = true;
+  }
+
   // Set snake locations
   for (const snake of board.snakes) {
     const {body} = snake;
@@ -236,6 +241,7 @@ function createNode(x, y) {
   return {
     x,
     y,
+    hasFood: false,
     hasSnake: false,
     potentialSnake: null,
     discovered: false,
@@ -357,5 +363,17 @@ function getFarthestReachablePointWithDirection(head, boardNodes, direction) {
 
 function getAnySafePoint(head, board, boardNodes) {
   const siblingNodes = getSiblingNodesWithoutSnake(head, board, boardNodes);
-  return siblingNodes.length > 0 ? siblingNodes[0] : null;
+
+  if (siblingNodes.length === 0) {
+    return null;
+  }
+
+  // Try to return a point with food
+  for (let i = 0; i < siblingNodes.length; i++) {
+    if (siblingNodes[i].hasFood) {
+      return siblingNodes[i];
+    }
+  }
+
+  return siblingNodes[0]; // Just return the first available point
 }

@@ -77,10 +77,14 @@ function getTargets(board, mySnake, boardNodes) {
   const targets = [];
 
   for (const foodPoint of food) {
-    targets.push({
-      point: foodPoint,
-      distance: distanceBetweenPoints(myHead, foodPoint),
-    });
+    if (shouldEatFood(foodPoint, mySnake, board, boardNodes)) {
+      targets.push({
+        point: foodPoint,
+        distance: distanceBetweenPoints(myHead, foodPoint),
+      });
+    } else {
+      logger.info('Did not eat food because afraid of cornering self:', foodPoint);
+    }
   }
 
   for (const snake of snakes) {
@@ -108,6 +112,18 @@ function distanceBetweenPoints(pointA, pointB) {
 
 function compareDistance(a, b) {
   return a.distance - b.distance;
+}
+
+// Only eat food if there's a potential path from it back to snake's own tail
+function shouldEatFood(foodPoint, mySnake, board, boardNodes) {
+  const myTail = mySnake.body[mySnake.body.length - 1];
+  const foodAsSnake = {
+    body: [foodPoint],
+  };
+  foodAsSnake.body.length = mySnake.body.length + 1; // Pretend food is bigger than self
+  const pathFromFoodToTail = getPathToTarget(myTail, foodAsSnake, board, boardNodes);
+  resetBoardNodes(boardNodes);
+  return pathFromFoodToTail !== null;
 }
 
 function shouldAttackSnake(theirSnake, mySnake, boardNodes) {

@@ -24,8 +24,8 @@ function getMove(game) {
     you: snake,
   } = game;
   const head = getHead(snake);
-  const targets = getTargets(board, snake);
   const boardNodes = buildBoardNodes(board, head);
+  const targets = getTargets(board, snake, boardNodes);
 
   logger.info('Location:', head, 'Length:', snake.body.length);
   logger.debug('Targets:', targets);
@@ -71,7 +71,7 @@ function getDirectionToPoint(head, point) {
     : 'down';
 }
 
-function getTargets(board, mySnake) {
+function getTargets(board, mySnake, boardNodes) {
   const {food, snakes} = board;
   const myHead = getHead(mySnake);
   const targets = [];
@@ -84,7 +84,7 @@ function getTargets(board, mySnake) {
   }
 
   for (const snake of snakes) {
-    if (snake.body.length >= mySnake.body.length) {
+    if (!shouldAttackSnake(snake, mySnake, boardNodes)) {
       continue;
     }
 
@@ -108,6 +108,41 @@ function distanceBetweenPoints(pointA, pointB) {
 
 function compareDistance(a, b) {
   return a.distance - b.distance;
+}
+
+function shouldAttackSnake(theirSnake, mySnake, boardNodes) {
+  if (theirSnake.body.length >= mySnake.body.length) {
+    return false;
+  }
+
+  // Search 2 squares around their snake. If there are more than 8 snake
+  // parts within the range around their snake, don't attack it.
+  const SEARCH_RANGE = 2;
+  const SNAKE_PARTS_LIMIT = 8;
+
+  const theirHead = getHead(theirSnake);
+
+  const minX = Math.max(theirHead.x - SEARCH_RANGE, 0);
+  const maxX = Math.max(theirHead.x + SEARCH_RANGE, boardNodes.length - 1);
+
+  const minY = Math.max(theirHead.y - SEARCH_RANGE, 0);
+  const maxY = Math.max(theirHead.y + SEARCH_RANGE, boardNodes.length - 1);
+
+  let numSnakeParts = -1; // Start with -1 to discount their head (since it'll get counted below)
+
+  for (let x = minX; x < maxX; x++) {
+    for (let y = minY; y < maxY; y++) {
+      if (boardNodes[x][y].hasSnake) {
+        ++numSnakeParts;
+      }
+    }
+  }
+
+  const shouldAttack = numSnakeParts < SNAKE_PARTS_LIMIT;
+  if (!shouldAttack) {
+    logger.info('Not attacking snake with', numSnakeParts, 'around it:', theirHead);
+  }
+  return shouldAttack;
 }
 
 function getCorners(board, head) {

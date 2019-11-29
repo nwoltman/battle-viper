@@ -25,22 +25,69 @@ function getMove(game) {
     you: snake,
   } = game;
   const head = getHead(snake);
-  const boardNodes = buildBoardNodes(board, head);
-  const targets = getTargets(board, snake, boardNodes);
+  const target = getTarget(board, snake);
 
   logger.info('Location:', head, 'Length:', snake.body.length);
-  logger.debug('Targets:', targets);
 
+  if (target !== null) {
+    logger.info('Target:', target);
+    return getDirectionToPoint(head, target);
+  }
+
+  logger.info('Failed to find a target. Probably going to die.');
+  return 'up';
+}
+
+function getDirectionToPoint(head, point) {
+  if (point.x > head.x) {
+    return 'right';
+  }
+  if (point.x < head.x) {
+    return 'left';
+  }
+  return point.y < head.y
+    ? 'up'
+    : 'down';
+}
+
+function getTarget(board, snake) {
+  const head = getHead(snake);
+  const boardNodes = buildBoardNodes(board, head);
+  const targets = getTargets(board, snake, boardNodes);
+  let fallbackTargets = null;
   let avoidPotentialSnakes = true;
 
+  logger.debug('Targets:', targets);
+
   for (;;) {
+    const pathsToTarget = [];
+
     for (let i = 0; i < targets.length; i++) {
       const pathToTarget =
         getPathToTarget(targets[i], snake, board, boardNodes, avoidPotentialSnakes);
+      resetBoardNodes(boardNodes);
 
       if (pathToTarget !== null) {
-        // logger.debug('Path to Target:', pathToTarget.map(point => ({x: point.x, y: point.y})));
-        return getDirectionToPoint(head, pathToTarget[0]);
+        pathsToTarget.push(pathToTarget);
+      }
+    }
+
+    if (pathsToTarget.length > 0) {
+      return getShortestPath(pathsToTarget)[0]; // Get first step to shortest path
+    }
+
+    if (fallbackTargets === null) {
+      fallbackTargets = getCorners(board, boardNodes, head);
+      fallbackTargets.push(getFarthestReachablePoint(head, boardNodes));
+      logger.debug('Fallback Targets:', fallbackTargets);
+    }
+
+    for (let i = 0; i < fallbackTargets.length; i++) {
+      const pathToTarget =
+        getPathToTarget(fallbackTargets[i], snake, board, boardNodes, avoidPotentialSnakes);
+
+      if (pathToTarget !== null) {
+        return pathToTarget[0];
       }
 
       resetBoardNodes(boardNodes);
@@ -56,36 +103,29 @@ function getMove(game) {
 
   const fallbackPoint = getAnySafePoint(head, board, boardNodes);
   logger.debug('Fallback point:', fallbackPoint);
-  if (fallbackPoint !== null) {
-    return getDirectionToPoint(head, fallbackPoint);
-  }
-
-  return 'up'; // Should only reach here if all is lost
+  return fallbackPoint;
 }
 
-function getDirectionToPoint(head, point) {
-  if (point.x > head.x) {
-    return 'right';
+function getShortestPath(paths) {
+  let shortestPath = paths[0];
+
+  for (let i = 1; i < paths.length; i++) {
+    const path = paths[i];
+    if (path.length < shortestPath.length) {
+      shortestPath = path;
+    }
   }
-  if (point.x < head.x) {
-    return 'left';
-  }
-  return point.y < head.y
-    ? 'up'
-    : 'down';
+
+  return shortestPath;
 }
 
 function getTargets(board, mySnake, boardNodes) {
   const {food, snakes} = board;
-  const myHead = getHead(mySnake);
   const targets = [];
 
   for (const foodPoint of food) {
     if (shouldEatFood(foodPoint, mySnake, board, boardNodes)) {
-      targets.push({
-        point: foodPoint,
-        distance: distanceBetweenPoints(myHead, foodPoint),
-      });
+      targets.push(foodPoint);
     } else {
       logger.info('Did not eat food because afraid of cornering self:', foodPoint);
     }
@@ -96,29 +136,20 @@ function getTargets(board, mySnake, boardNodes) {
       continue;
     }
 
-    const snakeHead = getHead(snake);
-    targets.push({
-      point: snakeHead,
-      distance: distanceBetweenPoints(myHead, snakeHead),
-    });
+    // Go after where the snake is going to be
+    const head = getHead(snake);
+    const potentialSnakeNodes = getSiblingNodesWithoutSnake(head, board, boardNodes);
+
+    for (let i = 0; i < potentialSnakeNodes.length; i++) {
+      targets.push(potentialSnakeNodes[i]);
+    }
   }
 
-  if (targets.length > 0) {
-    targets.sort(compareDistance);
-  }
-
-  return targets.map(target => target.point).concat(
-    getCorners(board, boardNodes, myHead),
-    getFarthestReachablePoint(myHead, boardNodes)
-  );
+  return targets;
 }
 
 function distanceBetweenPoints(pointA, pointB) {
   return Math.abs(pointA.x - pointB.x) + Math.abs(pointA.y - pointB.y);
-}
-
-function compareDistance(a, b) {
-  return a.distance - b.distance;
 }
 
 function shouldAttackSnake(theirSnake, mySnake, board, boardNodes) {

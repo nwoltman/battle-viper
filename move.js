@@ -89,7 +89,7 @@ function getTargets(board, mySnake, boardNodes) {
   }
 
   for (const snake of snakes) {
-    if (!shouldAttackSnake(snake, mySnake, boardNodes)) {
+    if (!shouldAttackSnake(snake, mySnake, board, boardNodes)) {
       continue;
     }
 
@@ -115,15 +115,19 @@ function compareDistance(a, b) {
   return a.distance - b.distance;
 }
 
-function shouldAttackSnake(theirSnake, mySnake, boardNodes) {
+function shouldAttackSnake(theirSnake, mySnake, board, boardNodes) {
   if (theirSnake.body.length >= mySnake.body.length) {
     return false;
   }
 
-  // Search 2 squares around their snake. If there are more than 8 snake
+  if (board.snakes.length <= 2) { // Only 2 left? Go for the kill!
+    return true;
+  }
+
+  // Search 2 squares around their snake. If there are more than 9 snake
   // parts within the range around their snake, don't attack it.
   const SEARCH_RANGE = 2;
-  const SNAKE_PARTS_LIMIT = 8;
+  const SNAKE_PARTS_LIMIT = 9;
 
   const theirHead = getHead(theirSnake);
 
@@ -143,9 +147,9 @@ function shouldAttackSnake(theirSnake, mySnake, boardNodes) {
     }
   }
 
-  const shouldAttack = numSnakeParts < SNAKE_PARTS_LIMIT;
+  const shouldAttack = numSnakeParts <= SNAKE_PARTS_LIMIT;
   if (!shouldAttack) {
-    logger.info('Not attacking snake with', numSnakeParts, 'around it:', theirHead);
+    logger.info('Not attacking snake with', numSnakeParts, 'parts around it:', theirHead);
   }
   return shouldAttack;
 }
